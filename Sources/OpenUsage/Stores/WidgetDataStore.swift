@@ -100,6 +100,9 @@ final class WidgetDataStore {
     @ObservationIgnored var onRefreshOutcome: (@MainActor (String, RefreshOutcome, ErrorCategory?, Bool) -> Void)?
     /// Wired by `ICloudUsageSyncStore`; debounced there so a concurrent provider batch produces one file.
     @ObservationIgnored var onLocalHistoryChanged: (@MainActor () -> Void)?
+    /// The user's custom name for a provider card, if any (`ProviderAppearanceStore`), so alert
+    /// subtitles name the card the way the dashboard does.
+    @ObservationIgnored var customProviderName: (@MainActor (String) -> String?)?
     @ObservationIgnored private var peerHistoryDocuments: [UsageHistoryDocument] = []
     @ObservationIgnored private var snapshotRebuildDeferrals = 0
     @ObservationIgnored private var pendingSnapshotRebuild = false
@@ -283,7 +286,9 @@ final class WidgetDataStore {
             metrics: metrics,
             toggles: toggles,
             now: now,
-            providerName: { [providersByID] id in providersByID[id]?.provider.displayName ?? id },
+            providerName: { [providersByID, customProviderName] id in
+                customProviderName?(id) ?? providersByID[id]?.provider.displayName ?? id
+            },
             post: postNotification
         )
     }

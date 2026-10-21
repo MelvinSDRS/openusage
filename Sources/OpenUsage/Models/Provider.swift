@@ -3,8 +3,12 @@ import Foundation
 /// A data source that can register widgets it knows how to feed.
 struct Provider: Identifiable, Hashable {
     let id: String
-    let displayName: String
+    /// The provider's own name, or the user's custom name once `ProviderAppearanceStore` has been
+    /// applied (every provider `LayoutStore` hands to the UI).
+    var displayName: String
     let icon: IconSource
+    /// The user-picked card color, layered on by `ProviderAppearanceStore`; `nil` is Automatic.
+    var color: ProviderColor?
     /// Per-provider quick links (e.g. "Status", "Console") shown as buttons in the card's expanded area.
     /// Declared inline by each provider; mirrors the legacy Tauri `PluginMeta.links`. Empty by default so
     /// providers without links and the existing `Provider(id:displayName:icon:)` call sites need no change.

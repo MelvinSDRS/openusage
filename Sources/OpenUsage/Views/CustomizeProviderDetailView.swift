@@ -6,8 +6,9 @@ import SwiftUI
 /// here" drop zone that's also the drop target for moving a metric into it. Each metric row is
 /// grip · name · star · toggle (drag left, toggle right — same shape as the provider rows). The star
 /// is always visible: outline when not starred, filled accent when starred; tapping it pops a
-/// transient confirmation pill (and an orange denial pill over the per-provider cap). Providers that
-/// need an API key get their own "API Key" section here too.
+/// transient confirmation pill (and an orange denial pill over the per-provider cap). An "Appearance"
+/// card leads the page (custom name and color for the card), and providers that need an API key get
+/// their own "API Key" section here too.
 ///
 /// The drag gesture lives on the container, not on each row. With a per-row gesture, SwiftUI tears
 /// down the dragged row (and its gesture) when it crosses between the two cards' `ForEach`es,
@@ -28,6 +29,7 @@ struct CustomizeProviderDetailView: View {
     var body: some View {
         if let group = layout.customizeDetail(for: providerID) {
             VStack(alignment: .leading, spacing: density.sectionSpacing) {
+                ProviderAppearanceSection(providerID: providerID)
                 metricSections(group)
                     .simultaneousGesture(metricDragGesture())
                 if let keyProvider = container.apiKeyProviders.first(where: { $0.provider.id == providerID }) {

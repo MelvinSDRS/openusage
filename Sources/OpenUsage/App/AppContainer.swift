@@ -15,6 +15,9 @@ final class AppContainer {
     /// Single source of truth for which providers the user has turned off. Both stores consult it (via
     /// injected closures) and the Customize provider list drives it.
     let enablement: ProviderEnablementStore
+    /// The user's custom card names and colors (Customize → provider → Appearance). `LayoutStore`
+    /// layers them over every provider it hands to the UI; notifications read the names too.
+    let appearance: ProviderAppearanceStore
     /// Providers that need a user-supplied API key (currently OpenRouter and Z.ai), conforming to
     /// `APIKeyManaging`. Each matching Customize provider detail shows an API Key section and writes
     /// changes through the capability. Empty when no installed provider needs a user key.
@@ -76,6 +79,7 @@ final class AppContainer {
         let registry = WidgetRegistry.from(providers)
         let apiKeyProviders = providers.compactMap { $0 as? any APIKeyManaging }
         let enablement = ProviderEnablementStore()
+        let appearance = ProviderAppearanceStore()
         let notificationSettings = NotificationSettingsStore()
         let accountDefaults: ([String]) -> [String] = { metricIDs in
             DefaultLayout.expandingAccounts(metricIDs, providerIDs: registry.providers.map(\.id))
@@ -85,7 +89,8 @@ final class AppContainer {
             defaultMetricIDs: accountDefaults(DefaultLayout.metricIDs),
             defaultPinnedMetricIDs: accountDefaults(DefaultLayout.pinnedMetricIDs),
             defaultExpandedMetricIDs: accountDefaults(DefaultLayout.expandedMetricIDs),
-            isProviderEnabled: { [enablement] in enablement.isEnabled($0) }
+            isProviderEnabled: { [enablement] in enablement.isEnabled($0) },
+            applyAppearance: { [appearance] in appearance.applied(to: $0) }
         )
         let dataStore = WidgetDataStore(
             registry: registry,
@@ -95,6 +100,7 @@ final class AppContainer {
             notificationSettings: { notificationSettings },
             providerIdentityKeys: accountAssembly.identityKeysByCard
         )
+        dataStore.customProviderName = { [appearance] in appearance.customName(for: $0) }
         let iCloudSync = ICloudUsageSyncStore(dataStore: dataStore)
         // Re-enabling a provider should fetch it promptly, so clear any leftover failure backoff before
         // the enablement wake refreshes. `weak` breaks the cycle (dataStore already captures enablement).
@@ -123,6 +129,7 @@ final class AppContainer {
         self.onboarding = onboarding
         self.registry = registry
         self.enablement = enablement
+        self.appearance = appearance
         self.apiKeyProviders = apiKeyProviders
         self.notificationSettings = notificationSettings
         self.layout = layout
@@ -230,6 +237,7 @@ final class AppContainer {
         layout.resetToDefault()
         // The menu-bar Icon Style is a Settings preference, not part of the Customize layout reset.
         layout.menuBarStyle = .text
+        appearance.resetAll()
         reseedEnabledProviders()
         dataStore.resetDisplaySettings()
         notificationSettings.resetToDefaults()

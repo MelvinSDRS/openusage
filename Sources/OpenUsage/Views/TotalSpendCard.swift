@@ -239,7 +239,7 @@ struct TotalSpendRingContent: View {
             // (the default transition) while the survivors re-flow around it.
             ForEach(arcs) { arc in
                 RingSectorShape(startFraction: arc.start, endFraction: arc.end)
-                    .fill(TotalSpendPalette.color(for: arc.providerID))
+                    .fill(TotalSpendPalette.color(for: arc.provider))
             }
             centerLabel
         }
@@ -261,11 +261,11 @@ struct TotalSpendRingContent: View {
     }
 
     private struct RingArc: Identifiable, Equatable {
-        let providerID: String
+        let provider: Provider
         var start: Double
         var end: Double
 
-        var id: String { providerID }
+        var id: String { provider.id }
     }
 
     /// The ranked slices as cumulative ring fractions, with the minimum-sliver floor applied and the
@@ -281,7 +281,7 @@ struct TotalSpendRingContent: View {
         return zip(projection.slices, floored).map { slice, share in
             let width = share / sum
             defer { cursor += width }
-            return RingArc(providerID: slice.provider.id, start: cursor, end: cursor + width)
+            return RingArc(provider: slice.provider, start: cursor, end: cursor + width)
         }
     }
 
@@ -330,7 +330,7 @@ struct TotalSpendRingContent: View {
     private func legendRow(_ slice: TotalSpendProjectedSlice) -> some View {
         HStack(spacing: 7) {
             Circle()
-                .fill(TotalSpendPalette.color(for: slice.provider.id))
+                .fill(TotalSpendPalette.color(for: slice.provider))
                 .frame(width: 8, height: 8)
             Text(slice.provider.displayName)
                 .font(.system(size: density.supportingPointSize))
@@ -373,7 +373,8 @@ struct TotalSpendRingContent: View {
 /// provider ID only (never by rank or position), so a provider keeps its color across period
 /// switches, re-sorts, and launches. Hexes come from the legacy edition's per-plugin `brandColor`
 /// values; brands whose color is plain black (Cursor, Grok) get adaptive near-black/near-white
-/// dynamic colors so they read on both appearances without both landing on the same gray.
+/// dynamic colors so they read on both appearances without both landing on the same gray. A color
+/// the user picked for the card in Customize (`Provider.color`) wins over the brand tint.
 enum TotalSpendPalette {
     private static let byProviderID: [String: Color] = [
         "claude": hex(0xDE7356),                             // Claude terracotta
@@ -396,6 +397,10 @@ enum TotalSpendPalette {
     private static let fallback: [Color] = [
         hex(0x34C759), hex(0x5856D6), hex(0xFF2D55), hex(0xA2845E)
     ]
+
+    static func color(for provider: Provider) -> Color {
+        provider.color?.color ?? color(for: provider.id)
+    }
 
     static func color(for providerID: String) -> Color {
         if let brand = byProviderID[providerID] { return brand }

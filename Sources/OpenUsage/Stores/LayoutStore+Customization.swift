@@ -1,5 +1,5 @@
 extension LayoutStore {
-    func provider(id: String) -> Provider? { registry.provider(id: id) }
+    func provider(id: String) -> Provider? { registry.provider(id: id).map(applyAppearance) }
 
     func descriptor(for widget: PlacedWidget) -> WidgetDescriptor? {
         registry.descriptor(id: widget.descriptorID)
@@ -46,7 +46,7 @@ extension LayoutStore {
     }
 
     private func orderedProviders() -> [Provider] {
-        orderedProviderIDs().compactMap { registry.provider(id: $0) }
+        orderedProviderIDs().compactMap { provider(id: $0) }
     }
 
     /// Enabled (and provider-enabled) widgets grouped by provider, in the user's provider order, each
@@ -113,7 +113,7 @@ extension LayoutStore {
     /// provider is disabled so L2 can render dimmed-but-editable. nil for an unknown provider or one
     /// with no metrics — the per-provider slice of `customizeGroups` without the enablement guard.
     func customizeDetail(for providerID: String) -> ProviderMetrics? {
-        guard let provider = registry.provider(id: providerID) else { return nil }
+        guard let provider = self.provider(id: providerID) else { return nil }
         let metrics = orderedSupportedMetrics(for: providerID)
         guard !metrics.isEmpty else { return nil }
         return ProviderMetrics(

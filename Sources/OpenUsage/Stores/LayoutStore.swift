@@ -109,6 +109,9 @@ final class LayoutStore {
     private let defaultExpandedMetricIDs: [String]
     var defaultExpandedOnEnableIDs: Set<String>
     let isProviderEnabled: @MainActor (String) -> Bool
+    /// Layers the user's custom name and color over a registry provider (`ProviderAppearanceStore`).
+    /// Every provider this store hands to the UI goes through it.
+    let applyAppearance: @MainActor (Provider) -> Provider
 
     init(
         registry: WidgetRegistry,
@@ -118,7 +121,8 @@ final class LayoutStore {
         migrationBaselineMetricIDs: [String] = DefaultLayout.migrationBaselineMetricIDs,
         defaultPinnedMetricIDs: [String] = DefaultLayout.pinnedMetricIDs,
         defaultExpandedMetricIDs: [String] = DefaultLayout.expandedMetricIDs,
-        isProviderEnabled: @escaping @MainActor (String) -> Bool = { _ in true }
+        isProviderEnabled: @escaping @MainActor (String) -> Bool = { _ in true },
+        applyAppearance: @escaping @MainActor (Provider) -> Provider = { $0 }
     ) {
         self.registry = registry
         let persistence = LayoutPersistence(defaults: defaults, storageKey: storageKey)
@@ -127,6 +131,7 @@ final class LayoutStore {
         self.defaultPinnedMetricIDs = defaultPinnedMetricIDs
         self.defaultExpandedMetricIDs = defaultExpandedMetricIDs
         self.isProviderEnabled = isProviderEnabled
+        self.applyAppearance = applyAppearance
 
         let initial = LayoutBootstrap.load(
             registry: registry,

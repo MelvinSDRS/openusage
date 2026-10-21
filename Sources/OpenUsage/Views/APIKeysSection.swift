@@ -12,6 +12,7 @@ import SwiftUI
 struct APIKeysSection: View {
     let provider: any APIKeyManaging
     @Environment(WidgetDataStore.self) private var dataStore
+    @Environment(LayoutStore.self) private var layout
     @AppStorage(DensitySetting.key) private var density = DensitySetting.regular
 
     /// Whether the key editor is expanded.
@@ -54,10 +55,12 @@ struct APIKeysSection: View {
     // MARK: - Rows
 
     private var providerRow: some View {
-        HStack(spacing: 10) {
-            ProviderIcon(source: provider.provider.icon)
+        // As the dashboard names it: the user's custom name, when set.
+        let shown = layout.provider(id: provider.provider.id) ?? provider.provider
+        return HStack(spacing: 10) {
+            ProviderIcon(source: shown.icon)
                 .frame(width: 18, height: 18)
-            Text(provider.provider.displayName)
+            Text(shown.displayName)
             Spacer(minLength: 8)
             statusDot
             Button(isOpen ? "Done" : (status == .notSet ? "Add" : "Edit")) {
